@@ -6,9 +6,16 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"time"
 
 	"graphql-ozon/graph/model"
 	"graphql-ozon/storage"
+)
+
+const (
+	maxOpenConns    = 20
+	maxIdleConns    = 5
+	connMaxLifetime = 5 * time.Minute
 )
 
 type PostgresStorage struct {
@@ -20,6 +27,11 @@ func New(dsn string) (storage.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetConnMaxLifetime(connMaxLifetime)
+
 	return &PostgresStorage{db: db}, nil
 }
 
