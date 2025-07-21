@@ -60,7 +60,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateComment func(childComplexity int, postID string, parentID *string, text string, author string) int
-		CreatePost    func(childComplexity int, title string, content string) int
+		CreatePost    func(childComplexity int, title string, content string, author string) int
 	}
 
 	Post struct {
@@ -82,7 +82,7 @@ type CommentResolver interface {
 	Replies(ctx context.Context, obj *model.Comment, limit *int32, offset *int32) ([]*model.Comment, error)
 }
 type MutationResolver interface {
-	CreatePost(ctx context.Context, title string, content string) (*model.Post, error)
+	CreatePost(ctx context.Context, title string, content string, author string) (*model.Post, error)
 	CreateComment(ctx context.Context, postID string, parentID *string, text string, author string) (*model.Comment, error)
 }
 type PostResolver interface {
@@ -180,7 +180,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreatePost(childComplexity, args["title"].(string), args["content"].(string)), true
+		return e.complexity.Mutation.CreatePost(childComplexity, args["title"].(string), args["content"].(string), args["author"].(string)), true
 
 	case "Post.author":
 		if e.complexity.Post.Author == nil {
@@ -497,6 +497,11 @@ func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, 
 		return nil, err
 	}
 	args["content"] = arg1
+	arg2, err := ec.field_Mutation_createPost_argsAuthor(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["author"] = arg2
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_createPost_argsTitle(
@@ -518,6 +523,19 @@ func (ec *executionContext) field_Mutation_createPost_argsContent(
 ) (string, error) {
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
 	if tmp, ok := rawArgs["content"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createPost_argsAuthor(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("author"))
+	if tmp, ok := rawArgs["author"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -989,7 +1007,7 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreatePost(rctx, fc.Args["title"].(string), fc.Args["content"].(string))
+		return ec.resolvers.Mutation().CreatePost(rctx, fc.Args["title"].(string), fc.Args["content"].(string), fc.Args["author"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

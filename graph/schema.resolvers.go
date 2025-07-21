@@ -10,6 +10,7 @@ import (
 	"graphql-ozon/graph/helpers"
 	"graphql-ozon/graph/model"
 	"strconv"
+	"time"
 )
 
 // Replies is the resolver for the replies field.
@@ -24,14 +25,17 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, limit
 }
 
 // CreatePost is the resolver for the createPost field.
-func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string) (*model.Post, error) {
+func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, author string) (*model.Post, error) {
 	id := strconv.Itoa(len(r.PostsContainer) + 1)
 	post := &model.Post{
-		ID:      id,
-		Title:   title,
-		Content: content,
+		ID:              id,
+		Title:           title,
+		Content:         content,
+		Author:          author,
+		CreatedAt:       time.Now().Format(time.RFC3339),
+		CommentsEnabled: true,
 	}
-	r.PostsContainer = append(r.PostsContainer, post)
+	r.PostsContainer[post.ID] = post
 	return post, nil
 }
 
@@ -41,16 +45,18 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, par
 		return nil, fmt.Errorf("comment text exceeds 2000 characters")
 	}
 
-	// проверка поста
-	var found bool
-	for _, p := range r.PostsContainer {
-		if p.ID == postID {
-			found = true
-			break
-		}
-	}
-	if !found {
+	post, ok := r.PostsContainer[postID]
+	if !ok {
 		return nil, fmt.Errorf("post not found")
+	}
+	if !post.CommentsEnabled {
+		return nil, fmt.Errorf("comments are disabled for this post")
+	}
+
+	if parentID != nil {
+		if _, ok := r.CommentsContainer[*parentID]; !ok {
+			return nil, fmt.Errorf("parent comment not found")
+		}
 	}
 
 	id := strconv.Itoa(len(r.CommentsContainer) + 1)
@@ -61,7 +67,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, par
 		Text:     text,
 		Author:   author,
 	}
-	r.CommentsContainer = append(r.CommentsContainer, comment)
+	r.CommentsContainer[comment.ID] = comment
 	return comment, nil
 }
 
@@ -78,7 +84,11 @@ func (r *postResolver) Comments(ctx context.Context, obj *model.Post, limit *int
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
-	return r.PostsContainer, nil
+	result := make([]*model.Post, 0, len(r.PostsContainer))
+	for _, post := range r.PostsContainer {
+		result = append(result, post)
+	}
+	return result, nil
 }
 
 // Comment returns CommentResolver implementation.
