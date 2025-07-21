@@ -59,8 +59,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateComment func(childComplexity int, postID string, parentID *string, text string, author string) int
-		CreatePost    func(childComplexity int, title string, content string, author string) int
+		CreateComment           func(childComplexity int, postID string, parentID *string, text string, author string) int
+		CreatePost              func(childComplexity int, title string, content string, author string) int
+		SetCommentsAvailability func(childComplexity int, postID string, enabled bool) int
 	}
 
 	Post struct {
@@ -84,6 +85,7 @@ type CommentResolver interface {
 type MutationResolver interface {
 	CreatePost(ctx context.Context, title string, content string, author string) (*model.Post, error)
 	CreateComment(ctx context.Context, postID string, parentID *string, text string, author string) (*model.Comment, error)
+	SetCommentsAvailability(ctx context.Context, postID string, enabled bool) (*model.Post, error)
 }
 type PostResolver interface {
 	Comments(ctx context.Context, obj *model.Post, limit *int32, offset *int32) ([]*model.Comment, error)
@@ -181,6 +183,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreatePost(childComplexity, args["title"].(string), args["content"].(string), args["author"].(string)), true
+
+	case "Mutation.setCommentsAvailability":
+		if e.complexity.Mutation.SetCommentsAvailability == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setCommentsAvailability_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetCommentsAvailability(childComplexity, args["postID"].(string), args["enabled"].(bool)), true
 
 	case "Post.author":
 		if e.complexity.Post.Author == nil {
@@ -540,6 +554,47 @@ func (ec *executionContext) field_Mutation_createPost_argsAuthor(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setCommentsAvailability_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_setCommentsAvailability_argsPostID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["postID"] = arg0
+	arg1, err := ec.field_Mutation_setCommentsAvailability_argsEnabled(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["enabled"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_setCommentsAvailability_argsPostID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("postID"))
+	if tmp, ok := rawArgs["postID"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setCommentsAvailability_argsEnabled(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+	if tmp, ok := rawArgs["enabled"]; ok {
+		return ec.unmarshalNBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -1127,6 +1182,77 @@ func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_setCommentsAvailability(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setCommentsAvailability(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetCommentsAvailability(rctx, fc.Args["postID"].(string), fc.Args["enabled"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚖgraphqlᚑozonᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setCommentsAvailability(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Post_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Post_title(ctx, field)
+			case "content":
+				return ec.fieldContext_Post_content(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Post_createdAt(ctx, field)
+			case "commentsEnabled":
+				return ec.fieldContext_Post_commentsEnabled(ctx, field)
+			case "comments":
+				return ec.fieldContext_Post_comments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setCommentsAvailability_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3737,6 +3863,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createComment":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setCommentsAvailability":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setCommentsAvailability(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

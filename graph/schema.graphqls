@@ -28,4 +28,5 @@ type Query {
 type Mutation {
   createPost(title: String!, content: String!, author: String!): Post!
   createComment(postID: ID!, parentID: ID, text: String!, author: String!): Comment!
+  setCommentsAvailability(postID: ID!, enabled: Boolean!): Post!
 }
