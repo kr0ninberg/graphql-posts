@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"graphql-ozon/graph/helpers"
 	"graphql-ozon/graph/model"
 	"strconv"
 )
@@ -19,7 +20,7 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, limit
 			result = append(result, c)
 		}
 	}
-	return paginate(result, limit, offset), nil
+	return helpers.Paginate(result, limit, offset), nil
 }
 
 // CreatePost is the resolver for the createPost field.
@@ -72,7 +73,7 @@ func (r *postResolver) Comments(ctx context.Context, obj *model.Post, limit *int
 			result = append(result, c)
 		}
 	}
-	return paginate(result, limit, offset), nil
+	return helpers.Paginate(result, limit, offset), nil
 }
 
 // Posts is the resolver for the posts field.
@@ -96,33 +97,3 @@ type commentResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *queryResolver) AllPosts(ctx context.Context) ([]*model.Post, error) {
-	return r.Posts, nil
-}
-*/
-
-func paginate[T any](items []*T, limit *int32, offset *int32) []*T {
-	start := 0
-	end := len(items)
-
-	if offset != nil && int(*offset) < len(items) {
-		start = int(*offset)
-	}
-	if limit != nil && start+int(*limit) < len(items) {
-		end = start + int(*limit)
-	}
-
-	if start > end {
-		start = end
-	}
-
-	return items[start:end]
-}

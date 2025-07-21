@@ -6,6 +6,6 @@ package graph
 import "graphql-ozon/graph/model"
 
 type Resolver struct {
-	PostsContainer    []*model.Post
-	CommentsContainer []*model.Comment
+	PostsContainer    []*model.Post    // TODO must be map
+	CommentsContainer []*model.Comment // TODO also must be map
 }
