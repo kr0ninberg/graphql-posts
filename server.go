@@ -8,7 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/vektah/gqlparser/v2/ast"
 	"graphql-ozon/graph"
-	"graphql-ozon/graph/model"
+	"graphql-ozon/storage/inmemory"
 	"log"
 	"net/http"
 	"os"
@@ -22,10 +22,11 @@ func main() {
 		port = defaultPort
 	}
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-		PostsContainer:    make(map[string]*model.Post),
-		CommentsContainer: make(map[string]*model.Comment),
-	}}))
+	resolver := &graph.Resolver{
+		Storage: inmemory.New(),
+	}
+
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})

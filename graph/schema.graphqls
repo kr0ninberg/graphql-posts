@@ -18,6 +18,7 @@ type Comment {
   parentID: ID
   text: String!
   author: String!
+  createdAt: String!
   replies(limit: Int = 10, offset: Int = 0): [Comment!]!
 }
 

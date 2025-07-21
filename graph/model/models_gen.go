@@ -3,12 +3,13 @@
 package model
 
 type Comment struct {
-	ID       string     `json:"id"`
-	PostID   string     `json:"postID"`
-	ParentID *string    `json:"parentID,omitempty"`
-	Text     string     `json:"text"`
-	Author   string     `json:"author"`
-	Replies  []*Comment `json:"replies"`
+	ID        string     `json:"id"`
+	PostID    string     `json:"postID"`
+	ParentID  *string    `json:"parentID,omitempty"`
+	Text      string     `json:"text"`
+	Author    string     `json:"author"`
+	CreatedAt string     `json:"createdAt"`
+	Replies   []*Comment `json:"replies"`
 }
 
 type Mutation struct {

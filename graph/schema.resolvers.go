@@ -6,100 +6,50 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"graphql-ozon/graph/helpers"
 	"graphql-ozon/graph/model"
-	"strconv"
-	"time"
 )
 
 // Replies is the resolver for the replies field.
 func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, limit *int32, offset *int32) ([]*model.Comment, error) {
-	var result []*model.Comment
-	for _, c := range r.CommentsContainer {
-		if c.ParentID != nil && *c.ParentID == obj.ID {
-			result = append(result, c)
-		}
+	replies, err := r.Storage.GetReplies(ctx, obj.ID)
+	if err != nil {
+		return nil, err
 	}
-	return helpers.Paginate(result, limit, offset), nil
+	return helpers.Paginate(replies, limit, offset), nil
 }
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, author string, commentsEnabled *bool) (*model.Post, error) {
-	id := strconv.Itoa(len(r.PostsContainer) + 1)
-	post := &model.Post{
-		ID:              id,
-		Title:           title,
-		Content:         content,
-		Author:          author,
-		CreatedAt:       time.Now().Format(time.RFC3339),
-		CommentsEnabled: *commentsEnabled,
+	enabled := true
+	if commentsEnabled != nil {
+		enabled = *commentsEnabled
 	}
-	r.PostsContainer[post.ID] = post
-	return post, nil
+	return r.Storage.CreatePost(ctx, title, content, author, enabled)
 }
 
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, postID string, parentID *string, text string, author string) (*model.Comment, error) {
-	if len(text) > 2000 {
-		return nil, fmt.Errorf("comment text exceeds 2000 characters")
-	}
-
-	post, ok := r.PostsContainer[postID]
-	if !ok {
-		return nil, fmt.Errorf("post not found")
-	}
-	if !post.CommentsEnabled {
-		return nil, fmt.Errorf("comments are disabled for this post")
-	}
-
-	if parentID != nil {
-		if _, ok := r.CommentsContainer[*parentID]; !ok {
-			return nil, fmt.Errorf("parent comment not found")
-		}
-	}
-
-	id := strconv.Itoa(len(r.CommentsContainer) + 1)
-	comment := &model.Comment{
-		ID:       id,
-		PostID:   postID,
-		ParentID: parentID,
-		Text:     text,
-		Author:   author,
-	}
-	r.CommentsContainer[comment.ID] = comment
-	return comment, nil
+	return r.Storage.CreateComment(ctx, postID, parentID, text, author)
 }
 
 // SetCommentsAvailability is the resolver for the setCommentsAvailability field.
 func (r *mutationResolver) SetCommentsAvailability(ctx context.Context, postID string, enabled bool) (*model.Post, error) {
-	post, ok := r.PostsContainer[postID]
-	if !ok {
-		return nil, fmt.Errorf("post not found")
-	}
-
-	post.CommentsEnabled = enabled
-	return post, nil
+	return r.Storage.SetCommentsEnabled(ctx, postID, enabled)
 }
 
 // Comments is the resolver for the comments field.
 func (r *postResolver) Comments(ctx context.Context, obj *model.Post, limit *int32, offset *int32) ([]*model.Comment, error) {
-	var result []*model.Comment
-	for _, c := range r.CommentsContainer {
-		if c.PostID == obj.ID && c.ParentID == nil {
-			result = append(result, c)
-		}
+	allComments, err := r.Storage.GetCommentsByPost(ctx, obj.ID)
+	if err != nil {
+		return nil, err
 	}
-	return helpers.Paginate(result, limit, offset), nil
+	return helpers.Paginate(allComments, limit, offset), nil
 }
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
-	result := make([]*model.Post, 0, len(r.PostsContainer))
-	for _, post := range r.PostsContainer {
-		result = append(result, post)
-	}
-	return result, nil
+	return r.Storage.GetAllPosts(ctx)
 }
 
 // Comment returns CommentResolver implementation.

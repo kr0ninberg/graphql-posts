@@ -3,9 +3,8 @@
 // It serves as dependency injection for your app, add any dependencies you require here.
 package graph
 
-import "graphql-ozon/graph/model"
+import "graphql-ozon/storage"
 
 type Resolver struct {
-	PostsContainer    map[string]*model.Post
-	CommentsContainer map[string]*model.Comment
+	Storage storage.Storage
 }
