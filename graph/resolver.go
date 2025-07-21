@@ -6,5 +6,6 @@ package graph
 import "graphql-ozon/graph/model"
 
 type Resolver struct {
-	Posts []*model.Post
+	PostsContainer    []*model.Post
+	CommentsContainer []*model.Comment
 }

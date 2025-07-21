@@ -6,32 +6,123 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"graphql-ozon/graph/model"
 	"strconv"
 )
 
+// Replies is the resolver for the replies field.
+func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, limit *int32, offset *int32) ([]*model.Comment, error) {
+	var result []*model.Comment
+	for _, c := range r.CommentsContainer {
+		if c.ParentID != nil && *c.ParentID == obj.ID {
+			result = append(result, c)
+		}
+	}
+	return paginate(result, limit, offset), nil
+}
+
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string) (*model.Post, error) {
-	id := strconv.Itoa(len(r.Posts) + 1)
+	id := strconv.Itoa(len(r.PostsContainer) + 1)
 	post := &model.Post{
 		ID:      id,
 		Title:   title,
 		Content: content,
 	}
-	r.Posts = append(r.Posts, post)
+	r.PostsContainer = append(r.PostsContainer, post)
 	return post, nil
 }
 
-// AllPosts is the resolver for the allPosts field.
-func (r *queryResolver) AllPosts(ctx context.Context) ([]*model.Post, error) {
-	return r.Posts, nil
+// CreateComment is the resolver for the createComment field.
+func (r *mutationResolver) CreateComment(ctx context.Context, postID string, parentID *string, text string, author string) (*model.Comment, error) {
+	if len(text) > 2000 {
+		return nil, fmt.Errorf("comment text exceeds 2000 characters")
+	}
+
+	// проверка поста
+	var found bool
+	for _, p := range r.PostsContainer {
+		if p.ID == postID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	id := strconv.Itoa(len(r.CommentsContainer) + 1)
+	comment := &model.Comment{
+		ID:       id,
+		PostID:   postID,
+		ParentID: parentID,
+		Text:     text,
+		Author:   author,
+	}
+	r.CommentsContainer = append(r.CommentsContainer, comment)
+	return comment, nil
 }
+
+// Comments is the resolver for the comments field.
+func (r *postResolver) Comments(ctx context.Context, obj *model.Post, limit *int32, offset *int32) ([]*model.Comment, error) {
+	var result []*model.Comment
+	for _, c := range r.CommentsContainer {
+		if c.PostID == obj.ID && c.ParentID == nil {
+			result = append(result, c)
+		}
+	}
+	return paginate(result, limit, offset), nil
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	return r.PostsContainer, nil
+}
+
+// Comment returns CommentResolver implementation.
+func (r *Resolver) Comment() CommentResolver { return &commentResolver{r} }
 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
+// Post returns PostResolver implementation.
+func (r *Resolver) Post() PostResolver { return &postResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type commentResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
+type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *queryResolver) AllPosts(ctx context.Context) ([]*model.Post, error) {
+	return r.Posts, nil
+}
+*/
+
+func paginate[T any](items []*T, limit *int32, offset *int32) []*T {
+	start := 0
+	end := len(items)
+
+	if offset != nil && int(*offset) < len(items) {
+		start = int(*offset)
+	}
+	if limit != nil && start+int(*limit) < len(items) {
+		end = start + int(*limit)
+	}
+
+	if start > end {
+		start = end
+	}
+
+	return items[start:end]
+}
