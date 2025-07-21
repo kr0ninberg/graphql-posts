@@ -33,7 +33,7 @@ func main() {
 		dsn := os.Getenv("DATABASE_DSN")
 		storage, err := postgres.New(dsn)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("failed to connect to postgres: %v", err)
 		}
 		resolver = &graph.Resolver{
 			Storage: storage,
