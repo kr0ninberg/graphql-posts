@@ -5,6 +5,10 @@ import (
 	"graphql-ozon/graph/model"
 )
 
+const (
+	CommentMaxLength = 2000
+)
+
 type Storage interface {
 	CreatePost(ctx context.Context, title string, content string, author string, commentsEnabled bool) (*model.Post, error)
 	GetAllPosts(ctx context.Context) ([]*model.Post, error)

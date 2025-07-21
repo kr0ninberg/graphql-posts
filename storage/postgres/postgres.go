@@ -83,7 +83,7 @@ func (s *PostgresStorage) SetCommentsEnabled(ctx context.Context, postID string,
 }
 
 func (s *PostgresStorage) CreateComment(ctx context.Context, postID string, parentID *string, text, author string) (*model.Comment, error) {
-	if len(text) > 2000 {
+	if len(text) > storage.CommentMaxLength {
 		return nil, errors.New("text exceeds 2000 characters")
 	}
 

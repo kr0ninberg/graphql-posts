@@ -71,7 +71,7 @@ func (s *InMemoryStorage) CreateComment(ctx context.Context, postID string, pare
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if len(text) > 2000 {
+	if len(text) > storage.CommentMaxLength {
 		return nil, fmt.Errorf("comment text exceeds 2000 characters")
 	}
 
