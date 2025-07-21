@@ -12,9 +12,10 @@ import (
 )
 
 type InMemoryStorage struct {
-	mu       sync.RWMutex
-	posts    map[string]*model.Post
-	comments map[string]*model.Comment
+	postsMutex    sync.RWMutex
+	commentsMutex sync.RWMutex
+	posts         map[string]*model.Post
+	comments      map[string]*model.Comment
 }
 
 func New() storage.Storage {
@@ -25,8 +26,8 @@ func New() storage.Storage {
 }
 
 func (s *InMemoryStorage) CreatePost(ctx context.Context, title, content, author string, commentsEnabled bool) (*model.Post, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.postsMutex.Lock()
+	defer s.postsMutex.Unlock()
 
 	id := strconv.Itoa(len(s.posts) + 1)
 	post := &model.Post{
@@ -42,8 +43,8 @@ func (s *InMemoryStorage) CreatePost(ctx context.Context, title, content, author
 }
 
 func (s *InMemoryStorage) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.postsMutex.RLock()
+	defer s.postsMutex.RUnlock()
 
 	result := make([]*model.Post, 0, len(s.posts))
 	for _, p := range s.posts {
@@ -53,8 +54,8 @@ func (s *InMemoryStorage) GetAllPosts(ctx context.Context) ([]*model.Post, error
 }
 
 func (s *InMemoryStorage) SetCommentsEnabled(ctx context.Context, postID string, enabled bool, user string) (*model.Post, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.postsMutex.Lock()
+	defer s.postsMutex.Unlock()
 
 	post, ok := s.posts[postID]
 	if !ok {
@@ -68,8 +69,10 @@ func (s *InMemoryStorage) SetCommentsEnabled(ctx context.Context, postID string,
 }
 
 func (s *InMemoryStorage) CreateComment(ctx context.Context, postID string, parentID *string, text, author string) (*model.Comment, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.commentsMutex.Lock()
+	defer s.commentsMutex.Unlock()
+	s.postsMutex.RLock()
+	defer s.postsMutex.RUnlock()
 
 	if len(text) > storage.CommentMaxLength {
 		return nil, fmt.Errorf("comment text exceeds 2000 characters")
@@ -102,8 +105,8 @@ func (s *InMemoryStorage) CreateComment(ctx context.Context, postID string, pare
 }
 
 func (s *InMemoryStorage) GetCommentsByPost(ctx context.Context, postID string) ([]*model.Comment, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.commentsMutex.RLock()
+	defer s.commentsMutex.RUnlock()
 
 	var result []*model.Comment
 	for _, c := range s.comments {
@@ -115,8 +118,8 @@ func (s *InMemoryStorage) GetCommentsByPost(ctx context.Context, postID string) 
 }
 
 func (s *InMemoryStorage) GetReplies(ctx context.Context, parentID string) ([]*model.Comment, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.commentsMutex.RLock()
+	defer s.commentsMutex.RUnlock()
 
 	var replies []*model.Comment
 	for _, c := range s.comments {
@@ -128,8 +131,8 @@ func (s *InMemoryStorage) GetReplies(ctx context.Context, parentID string) ([]*m
 }
 
 func (s *InMemoryStorage) GetPostByID(ctx context.Context, postID string) (*model.Post, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.postsMutex.RLock()
+	defer s.postsMutex.RUnlock()
 
 	post, ok := s.posts[postID]
 	if !ok {
@@ -139,8 +142,8 @@ func (s *InMemoryStorage) GetPostByID(ctx context.Context, postID string) (*mode
 }
 
 func (s *InMemoryStorage) GetCommentByID(ctx context.Context, commentID string) (*model.Comment, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.commentsMutex.RLock()
+	defer s.commentsMutex.RUnlock()
 
 	c, ok := s.comments[commentID]
 	if !ok {
