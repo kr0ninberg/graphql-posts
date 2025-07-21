@@ -52,13 +52,16 @@ func (s *InMemoryStorage) GetAllPosts(ctx context.Context) ([]*model.Post, error
 	return result, nil
 }
 
-func (s *InMemoryStorage) SetCommentsEnabled(ctx context.Context, postID string, enabled bool) (*model.Post, error) {
+func (s *InMemoryStorage) SetCommentsEnabled(ctx context.Context, postID string, enabled bool, user string) (*model.Post, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	post, ok := s.posts[postID]
 	if !ok {
 		return nil, errors.New("post not found")
+	}
+	if post.Author != user {
+		return nil, errors.New("comment availability change not allowed")
 	}
 	post.CommentsEnabled = enabled
 	return post, nil

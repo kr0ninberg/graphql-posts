@@ -8,7 +8,7 @@ import (
 type Storage interface {
 	CreatePost(ctx context.Context, title string, content string, author string, commentsEnabled bool) (*model.Post, error)
 	GetAllPosts(ctx context.Context) ([]*model.Post, error)
-	SetCommentsEnabled(ctx context.Context, postID string, enabled bool) (*model.Post, error)
+	SetCommentsEnabled(ctx context.Context, postID string, enabled bool, user string) (*model.Post, error)
 
 	CreateComment(ctx context.Context, postID string, parentID *string, text string, author string) (*model.Comment, error)
 	GetCommentsByPost(ctx context.Context, postID string) ([]*model.Comment, error)

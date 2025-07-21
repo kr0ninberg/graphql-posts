@@ -62,7 +62,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateComment           func(childComplexity int, postID string, parentID *string, text string, author string) int
 		CreatePost              func(childComplexity int, title string, content string, author string, commentsEnabled *bool) int
-		SetCommentsAvailability func(childComplexity int, postID string, enabled bool) int
+		SetCommentsAvailability func(childComplexity int, postID string, enabled bool, user string) int
 	}
 
 	Post struct {
@@ -86,7 +86,7 @@ type CommentResolver interface {
 type MutationResolver interface {
 	CreatePost(ctx context.Context, title string, content string, author string, commentsEnabled *bool) (*model.Post, error)
 	CreateComment(ctx context.Context, postID string, parentID *string, text string, author string) (*model.Comment, error)
-	SetCommentsAvailability(ctx context.Context, postID string, enabled bool) (*model.Post, error)
+	SetCommentsAvailability(ctx context.Context, postID string, enabled bool, user string) (*model.Post, error)
 }
 type PostResolver interface {
 	Comments(ctx context.Context, obj *model.Post, limit *int32, offset *int32) ([]*model.Comment, error)
@@ -202,7 +202,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetCommentsAvailability(childComplexity, args["postID"].(string), args["enabled"].(bool)), true
+		return e.complexity.Mutation.SetCommentsAvailability(childComplexity, args["postID"].(string), args["enabled"].(bool), args["user"].(string)), true
 
 	case "Post.author":
 		if e.complexity.Post.Author == nil {
@@ -596,6 +596,11 @@ func (ec *executionContext) field_Mutation_setCommentsAvailability_args(ctx cont
 		return nil, err
 	}
 	args["enabled"] = arg1
+	arg2, err := ec.field_Mutation_setCommentsAvailability_argsUser(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["user"] = arg2
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_setCommentsAvailability_argsPostID(
@@ -621,6 +626,19 @@ func (ec *executionContext) field_Mutation_setCommentsAvailability_argsEnabled(
 	}
 
 	var zeroVal bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setCommentsAvailability_argsUser(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+	if tmp, ok := rawArgs["user"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -1276,7 +1294,7 @@ func (ec *executionContext) _Mutation_setCommentsAvailability(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetCommentsAvailability(rctx, fc.Args["postID"].(string), fc.Args["enabled"].(bool))
+		return ec.resolvers.Mutation().SetCommentsAvailability(rctx, fc.Args["postID"].(string), fc.Args["enabled"].(bool), fc.Args["user"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

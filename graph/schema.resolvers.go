@@ -34,8 +34,8 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, par
 }
 
 // SetCommentsAvailability is the resolver for the setCommentsAvailability field.
-func (r *mutationResolver) SetCommentsAvailability(ctx context.Context, postID string, enabled bool) (*model.Post, error) {
-	return r.Storage.SetCommentsEnabled(ctx, postID, enabled)
+func (r *mutationResolver) SetCommentsAvailability(ctx context.Context, postID string, enabled bool, user string) (*model.Post, error) {
+	return r.Storage.SetCommentsEnabled(ctx, postID, enabled, user)
 }
 
 // Comments is the resolver for the comments field.
