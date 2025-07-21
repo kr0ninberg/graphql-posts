@@ -4,6 +4,8 @@ go 1.24
 
 require (
 	github.com/99designs/gqlgen v0.17.76
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/vektah/gqlparser/v2 v2.5.30
 )
 

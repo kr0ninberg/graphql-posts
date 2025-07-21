@@ -139,11 +139,13 @@ models:
     fields:
       comments:
         resolver: true
+    model: graphql-ozon/graph/model.Post
   Comment:
     fields:
       replies:
         resolver: true
-  # gqlgen provides a default GraphQL UUID convenience wrapper for github.com/google/uuid 
+    model: graphql-ozon/graph/model.Comment
+  # gqlgen provides a default GraphQL UUID convenience wrapper for github.com/google/uuid
   # but you can override this to provide your own GraphQL UUID implementation
   UUID:
     model:

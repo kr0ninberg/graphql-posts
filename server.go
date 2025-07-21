@@ -9,6 +9,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 	"graphql-ozon/graph"
 	"graphql-ozon/storage/inmemory"
+	"graphql-ozon/storage/postgres"
 	"log"
 	"net/http"
 	"os"
@@ -22,8 +23,23 @@ func main() {
 		port = defaultPort
 	}
 
-	resolver := &graph.Resolver{
-		Storage: inmemory.New(),
+	var resolver *graph.Resolver
+	switch StorageType {
+	case "in-memory":
+		resolver = &graph.Resolver{
+			Storage: inmemory.New(),
+		}
+	case "postgres":
+		dsn := os.Getenv("DATABASE_DSN")
+		storage, err := postgres.New(dsn)
+		if err != nil {
+			log.Fatal(err)
+		}
+		resolver = &graph.Resolver{
+			Storage: storage,
+		}
+	default:
+		panic("storage type no provided")
 	}
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))

@@ -2,27 +2,7 @@
 
 package model
 
-type Comment struct {
-	ID        string     `json:"id"`
-	PostID    string     `json:"postID"`
-	ParentID  *string    `json:"parentID,omitempty"`
-	Text      string     `json:"text"`
-	Author    string     `json:"author"`
-	CreatedAt string     `json:"createdAt"`
-	Replies   []*Comment `json:"replies"`
-}
-
 type Mutation struct {
-}
-
-type Post struct {
-	ID              string     `json:"id"`
-	Title           string     `json:"title"`
-	Content         string     `json:"content"`
-	Author          string     `json:"author"`
-	CreatedAt       string     `json:"createdAt"`
-	CommentsEnabled bool       `json:"commentsEnabled"`
-	Comments        []*Comment `json:"comments"`
 }
 
 type Query struct {
