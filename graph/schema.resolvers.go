@@ -25,7 +25,7 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, limit
 }
 
 // CreatePost is the resolver for the createPost field.
-func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, author string) (*model.Post, error) {
+func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, author string, commentsEnabled *bool) (*model.Post, error) {
 	id := strconv.Itoa(len(r.PostsContainer) + 1)
 	post := &model.Post{
 		ID:              id,
@@ -33,7 +33,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 		Content:         content,
 		Author:          author,
 		CreatedAt:       time.Now().Format(time.RFC3339),
-		CommentsEnabled: true,
+		CommentsEnabled: *commentsEnabled,
 	}
 	r.PostsContainer[post.ID] = post
 	return post, nil
